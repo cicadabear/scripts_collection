@@ -7,57 +7,112 @@ This is a temporary script file.
 
 import geopandas
 import pandas as pd 
+#from shapely.geometry import Point
+#from shapely import from_wkb, from_wkt
+from shapely.ops import split
 
 #url = "D:\geo\guijiang_final\guijiang_river_osm.shp"
-url = "D:/geo/dongjiang/dongjiang_river_osm.shp"
+#url = "D:/geo/dongjiang/dongjiang_river_osm.shp"
+#url = "D:/geo/eergunahe/hailaerhe_network_osm.shp"
+url = "D:/geo/xiangjiang/xiangjiang_river_osm.shp"
+
+# start osm_id 674455140
+# starting_osm_id = '674455140'
+# #starting_osm_id = '674452643'
+# #starting_osm_id = '160446870'
+# #starting_osm_id = '160446872'
+# ending_osm_id = '27803429'
+starting_osm_id = '923896248'
+ending_osm_ids = ['38802349']
+abnormal_osm_ids = []
+
 df = geopandas.read_file(url)
 
 df = df.reset_index()
 kvDict = {}
 for index, row in df.iterrows():
-    first, last = row['geometry'].boundary
-    entity = {'data':row,'next': None, 'last': None, 'lastPoint': last.wkt}
+    osm_id = row['osm_id']
+    if osm_id in abnormal_osm_ids:
+        continue
+    first, last = row['geometry'].boundary.geoms
+    entity = {'data':row,'next': None, 'last': None, 'lastPointWkt': last.wkt, 
+              'osm_id': row['osm_id'], 'lastPoint': last }
+    if first.wkt is None:
+        #需要检查重复的key,就是有两段线，同一个起点。
+        print('---error---first.kwt is epmty-----osm_id---', osm_id)
     kvDict[first.wkt] = entity
 
 
 theFirstLineKey = ''
 
 for key, val in kvDict.items():
-    lastPoint = val['lastPoint']
-    nextLine = kvDict.get(lastPoint,None)
+    lastPointWkt = val['lastPointWkt']
+    nextLine = kvDict.get(lastPointWkt,None)
     if nextLine is not None:
         val['next'] = nextLine
         nextLine['last'] = val
 
-newList = []
+newDataFrame = []
 iterator = None
 index = 0
 issueList = []
 issue1List = []
+sortedOsmIdList = []
 for key, val in kvDict.items():
     lastLine = val['last']
     nextLine = val['next']
     if lastLine is None and nextLine is not None:
-        val['data']['index'] = index
-        val['data']['sort'] = index
-        index  = index + 1
-        newList.append(val['data'])
-        iterator = val
-        issueList.append(val)
-        print('-----------------------')
-        break
+        if starting_osm_id is not None and val['osm_id'] == starting_osm_id:
+            val['data']['index'] = index
+            val['data']['sort'] = index
+            index  = index + 1
+            newDataFrame.append(val['data'])
+            iterator = val
+            issueList.append(val)
+            #print('----------------------- osm_id', val['osm_id'])
+            break
     elif lastLine is None or nextLine is None:
         issue1List.append(val)
 
+#处理下一段
 while iterator['next'] is not None:
     iterator = iterator['next']
     iterator['data']['index'] = index
     iterator['data']['sort'] = index
     index = index + 1
-    newList.append(iterator['data'])
+    newDataFrame.append(iterator['data'])
+    sortedOsmIdList.append(iterator['osm_id'])
+    
+#如果有大量半段半段首位连不上的
+while iterator['osm_id'] not in ending_osm_ids:
+    print('-----------------lastPointWkt', iterator['lastPointWkt'])
+    for key, val in kvDict.items():
+        osm_id = val['osm_id']
+        #print('osm_id-----test-----', osm_id)
+        line = val['data']['geometry']
+        if osm_id not in sortedOsmIdList and iterator['lastPoint'].within(line):
+            print('----------------------- next osm_id', val['osm_id'])
+            val['data']['geometry'] = split(line, iterator['lastPoint']).geoms[1]
+            iterator['next'] = val
+            break
+    if iterator['next'] is None:
+        print('----------------------error----------------- osm_id--', iterator['osm_id'])
+        break
+    # 处理下一段
+    while iterator['next'] is not None:
+        iterator = iterator['next']
+        iterator['data']['index'] = index
+        iterator['data']['sort'] = index
+        index = index + 1
+        newDataFrame.append(iterator['data'])
+        sortedOsmIdList.append(iterator['osm_id'])
+    
 
-#df2 = pd.DataFrame(newList)
-df2 = geopandas.GeoDataFrame(newList)
+        
+print('..............writing to file.................')
+#df2 = pd.DataFrame(newDataFrame)
+df2 = geopandas.GeoDataFrame(newDataFrame)
 df2.set_crs('EPSG:4326')
 #df2.to_file("D:\geo\guijiang_final\guijiang_river_osm2.shp")
-df2.to_file("D:/geo/dongjiang/dongjiang_river_osm_sorted.shp",encoding='utf-8')
+#df2.to_file("D:/geo/dongjiang/dongjiang_river_osm_sorted.shp",encoding='utf-8')
+df2.to_file("D:/geo/xiangjiang/xiangjiang_river_osm_sorted.shp",encoding='utf-8')
