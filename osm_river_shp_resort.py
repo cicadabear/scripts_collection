@@ -7,6 +7,7 @@ This is a temporary script file.
 
 import geopandas
 import pandas as pd 
+import os
 #from shapely.geometry import Point
 #from shapely import from_wkb, from_wkt
 from shapely.ops import split
@@ -14,7 +15,7 @@ from shapely.ops import split
 #url = "D:\geo\guijiang_final\guijiang_river_osm.shp"
 #url = "D:/geo/dongjiang/dongjiang_river_osm.shp"
 #url = "D:/geo/eergunahe/hailaerhe_network_osm.shp"
-url = "D:/geo/xiangjiang/xiangjiang_river_osm.shp"
+url = "D:/geo/xiangjiang/yongminghe_river_osm.shp"
 
 # start osm_id 674455140
 # starting_osm_id = '674455140'
@@ -22,8 +23,8 @@ url = "D:/geo/xiangjiang/xiangjiang_river_osm.shp"
 # #starting_osm_id = '160446870'
 # #starting_osm_id = '160446872'
 # ending_osm_id = '27803429'
-starting_osm_id = '923896248'
-ending_osm_ids = ['38802349']
+starting_osm_id = '33677692'
+ending_osm_ids = ['151037814']
 abnormal_osm_ids = []
 
 df = geopandas.read_file(url)
@@ -115,4 +116,5 @@ df2 = geopandas.GeoDataFrame(newDataFrame)
 df2.set_crs('EPSG:4326')
 #df2.to_file("D:\geo\guijiang_final\guijiang_river_osm2.shp")
 #df2.to_file("D:/geo/dongjiang/dongjiang_river_osm_sorted.shp",encoding='utf-8')
-df2.to_file("D:/geo/xiangjiang/xiangjiang_river_osm_sorted.shp",encoding='utf-8')
+df2.to_file(os.path.splitext(url)[0]+'_sorted.shp', encoding='utf-8')
+
