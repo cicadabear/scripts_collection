@@ -3,6 +3,7 @@
  Small Socks5 Proxy Server in Python
  from https://github.com/MisterDaneel/
 """
+# Run in ios app Pythonista, share ios VPN with other devices via sock5 proxy.
 
 # Network
 import socket
