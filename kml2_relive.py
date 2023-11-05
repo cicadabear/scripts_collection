@@ -70,10 +70,8 @@ def main():
         # after_moving
         for csv_row in after_moving_data:
             flyto = deepcopy(flyto_tpl)
-            flyto.duration = 4
-            camera_kml = generate_camera_kml(
-                last_flyto_begin, last_flyto_end, csv_row
-            )
+            flyto.duration = 10
+            camera_kml = generate_camera_kml(last_flyto_begin, last_flyto_end, csv_row)
             flyto.append(camera_kml)
             playlist.append(flyto)
 
@@ -119,7 +117,7 @@ def process_relive_csv_keyframes(csv_file, moving_keyframes_count):
     index_start_moving = 0
     index_end_moving = 0
     starting_keyframes_count = 10
-    ending_keyframes_count = 2
+    ending_keyframes_count = 1
     keyframes_count = moving_keyframes_count
 
     distance = df.iloc[0].distance
@@ -158,8 +156,14 @@ def extract_keyframedata(start, end, count, df):
     index_start_moving = start
     index_end_moving = end
     keyframes_count = count
-    intervel = int((index_end_moving - index_start_moving) / (keyframes_count - 1))
-    keyframes_indexs = [*range(index_start_moving, index_end_moving + 1, intervel)]
+    keyframes_indexs = []
+    if keyframes_count > 2:
+        intervel = int((index_end_moving - index_start_moving) / (keyframes_count - 1))
+        keyframes_indexs = [*range(index_start_moving, index_end_moving + 1, intervel)]
+    elif keyframes_count == 2:
+        keyframes_indexs = [start, end]
+    else:
+        keyframes_indexs = [end]
 
     keyframes_list = []
 
